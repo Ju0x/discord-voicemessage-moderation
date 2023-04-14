@@ -5,6 +5,7 @@ import requests
 from discord.ext import commands
 import whisper
 import string
+from pydub import AudioSegment
 
 valid_chars = string.ascii_letters + string.digits + "äöüß"  # Add more if you want
 
@@ -19,6 +20,20 @@ def cleanup(text: str):
 class Bot(commands.Bot):
     async def on_ready(self):
         print(f"{self.user} - Started!")
+
+    async def anti_earrape(self, message):
+        audio = AudioSegment.from_ogg("audio.ogg")
+
+        if audio.dBFS > -2.5:
+            await message.delete()
+
+            await message.channel.send(
+                embed=discord.Embed(
+                    description=f"**Voice-message from {message.author} has been deleted.**\n"
+                                f"**Reason:** Earrape",
+                    color=discord.Color.red()
+                )
+            )
 
     async def on_message(self, message):
         if message.author.bot:
@@ -37,6 +52,8 @@ class Bot(commands.Bot):
         with open("audio.ogg", "wb") as fp:
             fp.write(response.content)
 
+        await self.anti_earrape(message)
+
         model = whisper.load_model("base")
 
         audio = whisper.load_audio("audio.ogg")
@@ -49,7 +66,7 @@ class Bot(commands.Bot):
             options = whisper.DecodingOptions(fp16=False)
         else:
             options = whisper.DecodingOptions(fp16=False, language=data["language"])
-            
+
         result = whisper.decode(model, mel, options)
 
         for badword in data["badwords"]:
