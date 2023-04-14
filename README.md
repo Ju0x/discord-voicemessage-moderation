@@ -9,5 +9,5 @@ Moderation for Discord's newest Voice-Message feature.
 You should set a language in the "language" field (format: en, de, pl) to get better results
 
 To get started you need to get your bot token on the discord developer site, and just add badwords to the list.
-If you want to use non-latin letters, than you must add them yourself in main.py to `valid_chars`
+If you want to use non-latin letters, then you must add them yourself in main.py to `valid_chars`
 
