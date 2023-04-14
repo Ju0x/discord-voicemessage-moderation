@@ -54,6 +54,7 @@ class Bot(commands.Bot):
 
         for badword in data["badwords"]:
             if badword.lower() in cleanup(result.text):
+                await message.delete()
                 await message.channel.send(
                     embed=discord.Embed(
                         description=f"**Voice-message from {message.author} has been deleted.**\n"
