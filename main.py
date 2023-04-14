@@ -11,6 +11,7 @@ valid_chars = string.ascii_letters + string.digits + "äöüß"  # Add more if y
 with open("config.json", "r") as fp:
     data = json.load(fp)
 
+
 def cleanup(text: str):
     return "".join(char if char in valid_chars else "" for char in text).lower()
 
@@ -43,13 +44,15 @@ class Bot(commands.Bot):
 
         mel = whisper.log_mel_spectrogram(audio).to(model.device)
 
-        _, probs = model.detect_language(mel)
-
-        options = whisper.DecodingOptions(fp16=False)
+        if data["language"] == "auto":
+            _, probs = model.detect_language(mel)
+            options = whisper.DecodingOptions(fp16=False)
+        else:
+            options = whisper.DecodingOptions(fp16=False, language=data["language"])
+            
         result = whisper.decode(model, mel, options)
 
         for badword in data["badwords"]:
-            print(cleanup(result.text))
             if badword.lower() in cleanup(result.text):
                 await message.channel.send(
                     embed=discord.Embed(
