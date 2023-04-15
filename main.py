@@ -1,13 +1,13 @@
 import json
+import os
 
 import discord
-import requests
-from discord.ext import commands
-import whisper
+from discord.ext import commands, tasks
 import string
-from pydub import AudioSegment
+from detections import earrape, speech
 
 valid_chars = string.ascii_letters + string.digits + "äöüß"  # Add more if you want
+command_path = "commands"
 
 with open("config.json", "r") as fp:
     data = json.load(fp)
@@ -21,56 +21,39 @@ class Bot(commands.Bot):
     async def on_ready(self):
         print(f"{self.user} - Started!")
 
-    async def anti_earrape(self, message):
-        audio = AudioSegment.from_ogg("audio.ogg")
+        # Load commands
+        for file in os.listdir(f"./{command_path}"):
+            if file.endswith(".py"):
+                await self.load_extension(f"{command_path}.{file.strip('.py')}")
 
-        if audio.dBFS > -2.5:
-            await message.delete()
+        await self.sync()
 
-            await message.channel.send(
-                embed=discord.Embed(
-                    description=f"**Voice-message from {message.author} has been deleted.**\n"
-                                f"**Reason:** Earrape",
-                    color=discord.Color.red()
-                )
-            )
+    async def sync(self):
+        await bot.tree.sync()
+
+        for guild in self.guilds:
+            bot.tree.copy_global_to(guild=guild)
+            await bot.tree.sync(guild=guild)
 
     async def on_message(self, message):
         if message.author.bot:
             return
-        voice_messages = []
 
-        for attachment in message.attachments:
-            if attachment.filename.endswith(".ogg"):
-                voice_messages.append(attachment)
-
-        if len(voice_messages) == 0:
+        if not speech.get_audio(message):
             return
 
-        response = requests.get(voice_messages[0].url)
+        if earrape.is_earrape():
+            await message.reply(
+                embed=discord.Embed(
+                    description=f"**⚠️ Voice-message might contain an earrape!**",
+                    color=discord.Color.yellow()
+                )
+            )
 
-        with open("audio.ogg", "wb") as fp:
-            fp.write(response.content)
-
-        await self.anti_earrape(message)
-
-        model = whisper.load_model("base")
-
-        audio = whisper.load_audio("audio.ogg")
-        audio = whisper.pad_or_trim(audio)
-
-        mel = whisper.log_mel_spectrogram(audio).to(model.device)
-
-        if data["language"] == "auto":
-            _, probs = model.detect_language(mel)
-            options = whisper.DecodingOptions(fp16=False)
-        else:
-            options = whisper.DecodingOptions(fp16=False, language=data["language"])
-
-        result = whisper.decode(model, mel, options)
+        recog = speech.to_text()
 
         for badword in data["badwords"]:
-            if badword.lower() in cleanup(result.text):
+            if badword.lower() in cleanup(recog.text):
                 await message.delete()
                 await message.channel.send(
                     embed=discord.Embed(
