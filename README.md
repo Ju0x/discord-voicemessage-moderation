@@ -13,6 +13,24 @@ Moderation for Discord's newest Voice-Message feature.
 ![grafik](https://user-images.githubusercontent.com/67586349/232235130-66519405-38e1-47dc-8801-ac5a4ce267d3.png)
 
 ## Setup
+
+At first discord.py, pydub and whisper must be installed.
+
+https://github.com/Rapptz/discord.py
+```
+pip install discord
+```
+
+https://github.com/jiaaro/pydub
+```
+pip install pydub
+```
+
+https://github.com/openai/whisper/
+```
+pip install whisper
+```
+
 ### Config.json
 
 You should set a language in the "language" field (format: en, de, pl) to get better results
