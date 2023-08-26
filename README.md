@@ -25,7 +25,7 @@ pip install pydub
 
 https://github.com/openai/whisper/
 ```
-pip install whisper
+pip install openai-whisper
 ```
 
 ### Config.json
